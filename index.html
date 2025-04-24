@@ -251,5 +251,26 @@
       renderEntries();
     };
   </script>
+<!-- Firebase App (the core Firebase SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+
+<!-- Firebase Firestore -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD71kSyVvVSeRfuYuXVTXpaz7GZ4zD2dNM",
+    authDomain: "joyes-tax-tracker.firebaseapp.com",
+    projectId: "joyes-tax-tracker",
+    storageBucket: "joyes-tax-tracker.firebasestorage.app",
+    messagingSenderId: "302344765857",
+    appId: "1:302344765857:web:33efc67f58188177ac8be0",
+    measurementId: "G-1X5EJ83DPZ"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
 </body>
 </html>
