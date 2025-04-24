@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Register Tax Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    table, th, td { border: 1px solid #aaa; border-collapse: collapse; padding: 6px; }
+    table { width: 100%; margin-top: 20px; }
+    th { background-color: #f2f2f2; }
+    input[type="text"], input[type="number"], input[type="date"], select { padding: 4px; margin-right: 6px; }
+    .form-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .form-row label { display: flex; align-items: center; gap: 4px; }
+    .totals { margin-top: 20px; font-weight: bold; }
+    .filters { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Check Register Tax Tracker</h1>
+  <div>
+    <label>Starting Balance: $<input type="number" id="startingBalance" value="0" step="0.01"></label>
+  </div>
+  <div class="form-row">
+    <label>Date:<input type="date" id="date"></label>
+    <label>Description:<input type="text" id="description" placeholder="e.g., Grocery"></label>
+    <label>Category:
+      <input list="categories" id="category" placeholder="Select or type">
+      <datalist id="categories">
+        <option value="Office Expense">
+        <option value="Business Expense">
+        <option value="New Equipment">
+        <option value="Doctors">
+        <option value="Labs">
+        <option value="Meds">
+        <option value="Health Equipment">
+        <option value="Home Improvement">
+        <option value="Tony's Job Income">
+        <option value="Tony's Social Security Income">
+        <option value="Joye's Job Income">
+        <option value="Joye's Disability Income">
+        <option value="Joye's Income from Tony's SS">
+        <option value="Other">
+      </datalist>
+    </label>
+    <label>Type:
+      <select id="type">
+        <option value="credit">Deposit</option>
+        <option value="debit">Withdrawal</option>
+      </select>
+    </label>
+    <label>Amount:$<input type="number" id="amount" step="0.01" placeholder="0.00"></label>
+    <label><input type="checkbox" id="taxDeductible">Tax-Deductible</label>
+    <button onclick="addEntry()" id="addBtn">Add</button>
+    <button onclick="updateEntry()" id="updateBtn" style="display:none">Update</button>
+  </div>
+  <div class="filters">
+    <label>Filter by Year: <input type="number" id="filterYear" placeholder="e.g., 2025"></label>
+    <label>Month: 
+      <select id="filterMonth">
+        <option value="">All</option>
+        <option value="01">January</option>
+        <option value="02">February</option>
+        <option value="03">March</option>
+        <option value="04">April</option>
+        <option value="05">May</option>
+        <option value="06">June</option>
+        <option value="07">July</option>
+        <option value="08">August</option>
+        <option value="09">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </label>
+    <button onclick="applyFilters()">Apply Filters</button>
+    <button onclick="viewTaxDeductibleOnly()">View Tax-Deductible Only</button>
+    <button onclick="exportToCSV()">Export to CSV</button>
+    <button onclick="window.print()">Print Report</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Deposit</th>
+        <th>Withdrawal</th>
+        <th>Tax-Deductible</th>
+        <th>Balance</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="entryTable"></tbody>
+  </table>
+  <div class="totals" id="totals"></div>
+  <script>
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    let editIndex = null;
+
+    function saveEntries() {
+      localStorage.setItem('entries', JSON.stringify(entries));
+    }
+
+    function addEntry() {
+      const entry = getEntryFromForm();
+      entries.push(entry);
+      saveEntries();
+      resetForm();
+      renderEntries();
+    }
+
+    function updateEntry() {
+      const entry = getEntryFromForm();
+      if (editIndex !== null) {
+        entries[editIndex] = entry;
+        saveEntries();
+        resetForm();
+        renderEntries();
+      }
+    }
+
+    function getEntryFromForm() {
+      return {
+        date: document.getElementById('date').value,
+        desc: document.getElementById('description').value,
+        category: document.getElementById('category').value,
+        type: document.getElementById('type').value,
+        amt: parseFloat(document.getElementById('amount').value) || 0,
+        deductible: document.getElementById('taxDeductible').checked
+      };
+    }
+
+    function resetForm() {
+      document.getElementById('date').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('category').value = '';
+      document.getElementById('type').value = 'credit';
+      document.getElementById('amount').value = '';
+      document.getElementById('taxDeductible').checked = false;
+      document.getElementById('addBtn').style.display = 'inline';
+      document.getElementById('updateBtn').style.display = 'none';
+      editIndex = null;
+    }
+
+    function renderEntries(startBal = parseFloat(document.getElementById('startingBalance').value) || 0, filterYear = '', filterMonth = '', taxOnly = false) {
+      const table = document.getElementById('entryTable');
+      table.innerHTML = '';
+      let bal = startBal;
+      let totalDeposits = 0;
+      let totalWithdrawals = 0;
+      let totalDeductible = 0;
+      const categoryTotals = {};
+
+      entries.forEach((entry, index) => {
+        if (
+          (filterYear && !entry.date.startsWith(filterYear)) ||
+          (filterMonth && entry.date.slice(5, 7) !== filterMonth) ||
+          (taxOnly && !entry.deductible)
+        ) return;
+
+        const dep = entry.type === 'credit' ? entry.amt : 0;
+        const wit = entry.type === 'debit' ? entry.amt : 0;
+        bal += dep - wit;
+
+        const row = table.insertRow();
+        row.innerHTML = `
+          <td>${entry.date}</td>
+          <td>${entry.desc}</td>
+          <td>${entry.category}</td>
+          <td>${dep ? dep.toFixed(2) : ''}</td>
+          <td>${wit ? wit.toFixed(2) : ''}</td>
+          <td>${entry.deductible ? 'Yes' : 'No'}</td>
+          <td>$${bal.toFixed(2)}</td>
+          <td>
+            <button onclick="editEntry(${index})">Edit</button>
+            <button onclick="deleteEntry(${index})">Delete</button>
+          </td>
+        `;
+
+        totalDeposits += dep;
+        totalWithdrawals += wit;
+        if (entry.deductible) totalDeductible += wit;
+        if (!categoryTotals[entry.category]) categoryTotals[entry.category] = 0;
+        categoryTotals[entry.category] += wit;
+      });
+
+      let categoryBreakdown = '<br><br><u>Category Totals:</u><br>';
+      for (const cat in categoryTotals) {
+        categoryBreakdown += `${cat}: $${categoryTotals[cat].toFixed(2)}<br>`;
+      }
+
+      document.getElementById('totals').innerHTML = `
+        Total Deposits: $${totalDeposits.toFixed(2)}<br>
+        Total Withdrawals: $${totalWithdrawals.toFixed(2)}<br>
+        Tax-Deductible Total: $${totalDeductible.toFixed(2)}
+        ${categoryBreakdown}
+      `;
+    }
+
+    function editEntry(index) {
+      const entry = entries[index];
+      document.getElementById('date').value = entry.date;
+      document.getElementById('description').value = entry.desc;
+      document.getElementById('category').value = entry.category;
+      document.getElementById('type').value = entry.type;
+      document.getElementById('amount').value = entry.amt;
+      document.getElementById('taxDeductible').checked = entry.deductible;
+      document.getElementById('addBtn').style.display = 'none';
+      document.getElementById('updateBtn').style.display = 'inline';
+      editIndex = index;
+    }
+
+    function deleteEntry(index) {
+      if (confirm('Delete this entry?')) {
+        entries.splice(index, 1);
+        saveEntries();
+        renderEntries();
+      }
+    }
+
+    function applyFilters() {
+      const year = document.getElementById('filterYear').value;
+      const month = document.getElementById('filterMonth').value;
+      renderEntries(undefined, year, month);
+    }
+
+    function viewTaxDeductibleOnly() {
+      renderEntries(undefined, '', '', true);
+    }
+
+    function exportToCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,Date,Description,Category,Deposit,Withdrawal,Tax-Deductible\n";
+      entries.forEach(entry => {
+        const dep = entry.type === 'credit' ? entry.amt.toFixed(2) : '';
+        const wit = entry.type === 'debit' ? entry.amt.toFixed(2) : '';
+        const line = `${entry.date},${entry.desc},${entry.category},${dep},${wit},${entry.deductible ? 'Yes' : 'No'}`;
+        csvContent += line + "\n";
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "tax_tracker_report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.onload = () => {
+      renderEntries();
+    };
+  </script>
+</body>
+</html>
