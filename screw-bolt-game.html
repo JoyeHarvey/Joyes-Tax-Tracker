@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screw &amp; Bolt Sort Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; margin: 0; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+    #score { font-size: 1.2em; margin-bottom: 20px; }
+    .game-container { display: flex; justify-content: space-around; flex-wrap: wrap; }
+    .panel { background: #fff; padding: 20px; border-radius: 8px; width: 300px; margin: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .panel h2 { margin-top: 0; }
+    .items { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .item, .slot { width: 120px; height: 40px; line-height: 40px; border: 2px solid #333; border-radius: 5px; background: #e0e0e0; cursor: pointer; }
+    .item { background: #ffd54f; }
+    .slot.correct { background: #c8e6c9; border-color: #388e3c; }
+    .slot.wrong { animation: shake 0.3s; }
+    @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+    #reset { margin-top: 20px; padding: 10px 20px; font-size: 1em; border: none; background: #2196f3; color: #fff; border-radius: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Screw &amp; Bolt Sort Game</h1>
+  <div id="score">Score: 0</div>
+  <div class="game-container">
+    <div class="panel">
+      <h2>Screws</h2>
+      <div id="screws" class="items">
+        <div class="item" draggable="true" id="screw-flat" data-type="flat">Flathead</div>
+        <div class="item" draggable="true" id="screw-phillips" data-type="phillips">Phillips</div>
+        <div class="item" draggable="true" id="screw-hex" data-type="hex">Hex</div>
+        <div class="item" draggable="true" id="screw-torx" data-type="torx">Torx</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Bolts</h2>
+      <div id="bolts" class="items">
+        <div class="slot" data-type="hex">Hex</div>
+        <div class="slot" data-type="flat">Flathead</div>
+        <div class="slot" data-type="torx">Torx</div>
+        <div class="slot" data-type="phillips">Phillips</div>
+      </div>
+    </div>
+  </div>
+  <button id="reset">Reset Game</button>
+
+  <script>
+    let score = 0;
+    const scoreEl = document.getElementById('score');
+    const screws = Array.from(document.querySelectorAll('.item'));
+    const slots = Array.from(document.querySelectorAll('.slot'));
+
+    function updateScore() {
+      scoreEl.textContent = 'Score: ' + score;
+    }
+
+    screws.forEach(screw => {
+      screw.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', screw.id);
+      });
+    });
+
+    slots.forEach(slot => {
+      slot.addEventListener('dragover', e => e.preventDefault());
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        const screw = document.getElementById(id);
+        if (slot.dataset.type === screw.dataset.type) {
+          slot.textContent = screw.textContent;
+          slot.classList.add('correct');
+          screw.remove();
+          score++;
+          updateScore();
+        } else {
+          slot.classList.add('wrong');
+          setTimeout(() => slot.classList.remove('wrong'), 500);
+        }
+      });
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>
