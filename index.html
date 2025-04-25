@@ -28,6 +28,25 @@
     .form-row label { display: flex; align-items: center; gap: 4px; }
     .totals { margin-top: 20px; font-weight: bold; }
     .filters { margin-top: 20px; }
+<style>
+  .game-button {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 24px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+    text-decoration: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+  }
+
+  .game-button:hover {
+    background-color: #45a049;
+  }
+</style>
+
   </style>
 </head>
 <body>
@@ -286,7 +305,7 @@
   const db = firebase.firestore();
 </script>
 <script src="script.js"></script>
-  <a href="screw-bolt-game.html" class="game-link" target="_blank">Play the Screw & Bolt Sort Game</a>
+  <a href="screw-bolt-game.html" class="game-button" target="_blank">🔩 Play the Screw & Bolt Sort Game</a>
 
 </body>
 </html>
